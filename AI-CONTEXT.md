@@ -90,9 +90,10 @@ sorts ascending by `time`, and draws the background area graph. Buoys report few
 ### Proxy files
 - `functions/api/stations.js` forwards `GET /api/stations` to Zephyr's station list and
   caches briefly.
-- `functions/api/stations/[id]/data.js` forwards `GET /api/stations/:id/data`, but only for
-  the eight whitelisted station IDs. This prevents the deployment becoming a generic open
-  proxy.
+- `functions/api/station-data.js` forwards `GET /api/station-data?id=...`, but only for the
+  eight whitelisted station IDs. This prevents the deployment becoming a generic open proxy.
+- `functions/api/stations/[id]/data.js` is the older path-style history route and is retained
+  for compatibility.
 - `netlify/functions/stations.mjs` and `netlify/functions/station-data.mjs` provide the same
   proxy behavior for Netlify. `netlify.toml` rewrites `/api/...` to those functions, so
   `index.html` does not need host-specific code.
@@ -167,7 +168,7 @@ copy its `_id`, add `{ id:"…", name:"…" }` to `STATIONS`, reload. Layout aut
 - **History graphs**: `twoHourPoints()` (filter+convert+sort), `smoothLine()`
   (Catmull-Rom→Bézier for the Strava-style curve), `drawGraph(i, pts)` (builds the inline SVG
   area+line into the tile's `.graph` layer, auto-scaling y per tile), and `fetchHistory()`
-  (fetches all 8 `/api/stations/{id}/data` in parallel, every 5 min). The `.graph` div is an
+  (fetches all 8 `/api/station-data?id=...` in parallel, every 5 min). The `.graph` div is an
   absolutely-positioned `z-index:0` layer; tile content sits at `z-index:1`. Graph colour uses
   `var(--c)`, so it recolours automatically with theme/band — no redraw needed for those.
 - `updateClock()` / `refreshAll()` — the poll loop and the "synced … ago" / stale logic.

@@ -229,7 +229,7 @@ function drawGraph(i, pts){
 async function fetchHistory(){
   await Promise.allSettled(STATIONS.map(async (s,i)=>{
     try{
-      const r=await fetch(`${API_BASE}/stations/${s.id}/data?_=${Date.now()}`);
+      const r=await fetch(`${API_BASE}/station-data?id=${encodeURIComponent(s.id)}&_=${Date.now()}`);
       if(!r.ok) return;
       const pts=twoHourPoints(await r.json());
       histById[s.id]=pts; drawGraph(i, pts);

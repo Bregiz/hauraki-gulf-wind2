@@ -87,7 +87,7 @@ If Cloudflare blocks project creation, deploy the same GitHub repo on Netlify:
 
 ### Security posture
 
-- The browser fetches only same-origin URLs (`/api/stations` and `/api/stations/:id/data`).
+- The browser fetches only same-origin URLs (`/api/stations` and `/api/station-data?id=...`).
 - The proxy only fetches hard-coded Zephyr endpoints and only allows the eight known station
   IDs for history, so it is not an open proxy.
 - `_headers` sets a restrictive Content Security Policy: app code can connect only to `self`.
@@ -111,7 +111,7 @@ If Cloudflare blocks project creation, deploy the same GitHub repo on Netlify:
   to the eight stations it shows, matched by station `_id`.
 - The API reports wind in **km/h**; the page converts to **knots** (÷ 1.852).
 - For the **2-hour trend graph** behind each tile, the page also calls
-  `GET /api/stations/{id}/data` (per station, every 5 minutes). The proxy forwards this to
+  `GET /api/station-data?id={id}` (per station, every 5 minutes). The proxy forwards this to
   Zephyr's history endpoint; the page keeps only the last 2 h.
 
 Useful fields on each station object:

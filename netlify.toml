@@ -9,6 +9,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/station-data"
+  to = "/.netlify/functions/station-data"
+  status = 200
+
+[[redirects]]
   from = "/api/stations/:id/data"
   to = "/.netlify/functions/station-data?id=:id"
   status = 200
