@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en-nz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hauraki Gulf Wind</title>
+<style>
+  [data-theme="night"]{
+    --bg:#081320; --tile-bg:#102234; --text:#eef5fc; --muted:#8aa4ba; --line:#284665;
+    --calm:#3ddc84; --mod:#5ec8ff; --fresh:#ffb84d; --gale:#ff6b78;
+  }
+  [data-theme="day"]{
+    --bg:#c5d3df; --tile-bg:#ffffff; --text:#0b1a27; --muted:#566f83; --line:#a7bacb;
+    --calm:#0f9d52; --mod:#0277c2; --fresh:#c8780a; --gale:#d6303f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased;
+    height:100vh; display:flex; flex-direction:column; overflow:hidden;
+    padding:clamp(8px,1.4vw,18px); gap:clamp(8px,1.2vw,14px);
+    transition:background .25s, color .25s;
+  }
+
+  header{display:flex;align-items:center;gap:clamp(8px,1.4vw,16px);flex:0 0 auto}
+  h1{font-size:clamp(15px,1.8vw,23px);margin:0;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+  .live{display:inline-flex;align-items:center;gap:7px;font-size:clamp(10px,1.1vw,13px);
+    font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--calm)}
+  .live .dot{width:9px;height:9px;border-radius:50%;background:var(--calm);animation:pulse 1.6s infinite}
+  .live.stale{color:var(--muted)} .live.stale .dot{background:var(--muted);animation:none}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(90,200,130,.5)}70%{box-shadow:0 0 0 9px rgba(90,200,130,0)}100%{box-shadow:0 0 0 0 rgba(90,200,130,0)}}
+  .updated{color:var(--muted);font-size:clamp(10px,1.1vw,13px);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .spacer{flex:1}
+  header button{background:var(--tile-bg);color:var(--text);border:1px solid var(--line);
+    border-radius:10px;padding:8px 12px;font-size:16px;line-height:1;cursor:pointer;transition:.15s}
+  header button:hover{border-color:var(--mod);color:var(--mod)}
+
+  main{flex:1;min-height:0;display:grid;gap:clamp(8px,1.1vw,15px);
+    grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr}
+  @media(max-width:1000px){ main{grid-template-columns:repeat(2,1fr)} }
+  @media(max-width:560px){
+    body{overflow:auto;height:auto;min-height:100vh}
+    main{grid-template-columns:1fr;grid-auto-rows:minmax(160px,1fr)}
+  }
+
+  .tile{
+    position:relative;overflow:hidden;border-radius:clamp(12px,1.2vw,18px);
+    background:color-mix(in srgb, var(--c,var(--line)) 9%, var(--tile-bg));
+    border:1px solid color-mix(in srgb, var(--c,var(--line)) 32%, var(--line));
+    padding:clamp(10px,1.3vw,20px) clamp(13px,1.6vw,24px);
+    display:flex;flex-direction:column;justify-content:space-between;gap:6px;min-height:0;
+    transition:background .25s,border-color .25s;
+  }
+  .tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--c,var(--line));z-index:1}
+  .tile.offline{opacity:.5}
+  .graph{position:absolute;inset:0;z-index:0;pointer-events:none}
+  .graph svg{width:100%;height:100%;display:block}
+  .thead,.mid,.foot{position:relative;z-index:1}
+  .tile[data-band=calm]{--c:var(--calm)}
+  .tile[data-band=mod]{--c:var(--mod)}
+  .tile[data-band=fresh]{--c:var(--fresh)}
+  .tile[data-band=gale]{--c:var(--gale)}
+
+  .thead{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .name{font-size:clamp(13px,1.5vw,20px);font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .age{font-size:clamp(10px,1vw,13px);color:var(--muted);white-space:nowrap;flex:0 0 auto}
+  .age.stale{color:var(--fresh)} .age.off{color:var(--gale);font-weight:700}
+
+  .mid{display:flex;align-items:baseline;gap:clamp(8px,1vw,18px);flex-wrap:wrap}
+  .spd{font-size:clamp(48px,8.5vw,118px);line-height:.8;font-weight:800;
+    color:var(--c,var(--text));font-variant-numeric:tabular-nums;letter-spacing:-2px}
+  .spd .u{font-size:.26em;color:var(--muted);font-weight:600;margin-left:.1em;letter-spacing:0}
+  .gst{font-size:clamp(22px,3.3vw,46px);font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;line-height:1}
+  .gst em{color:var(--muted);font-weight:600;font-style:normal;font-size:.62em}
+
+  .foot{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .dirwrap{display:flex;align-items:center;gap:clamp(6px,.8vw,12px)}
+  .dirwrap svg{display:block;width:clamp(30px,4vw,58px);height:clamp(30px,4vw,58px)}
+  .card{font-size:clamp(22px,3.1vw,46px);font-weight:800;color:var(--text);letter-spacing:.5px;line-height:1}
+  .deg{font-size:clamp(11px,1.1vw,15px);color:var(--muted);font-weight:600}
+  .bl{font-size:clamp(11px,1.15vw,16px);font-weight:800;letter-spacing:.6px;text-transform:uppercase;
+    color:var(--c,var(--muted));padding:5px 11px;border-radius:999px;white-space:nowrap;
+    background:color-mix(in srgb, var(--c,var(--line)) 18%, transparent)}
+  .err{color:var(--gale);font-weight:700;font-size:clamp(13px,1.4vw,18px)}
+
+  footer{flex:0 0 auto;color:var(--muted);font-size:clamp(9px,.92vw,12px);text-align:center;opacity:.85}
+  footer a{color:inherit}
+</style>
+</head>
+<body>
+  <header>
+    <h1>Hauraki Gulf Wind</h1>
+    <span class="live" id="live"><span class="dot"></span>Live</span>
+    <span class="updated" id="updated">loading…</span>
+    <span class="spacer"></span>
+    <button id="theme" title="Day / night">☀</button>
+    <button id="fs" title="Fullscreen">⛶</button>
+    <button id="refresh" title="Refresh now">↻</button>
+  </header>
+
+  <main id="grid"></main>
+
+  <footer>
+    Live anemometer data via <a href="https://www.zephyrapp.nz" target="_blank" rel="noopener">Zephyr</a> · winds in knots, arrow points downwind, label is the direction it's <b>from</b> · Tāmaki Strait Buoy stands in for Bastion Point
+  </footer>
+
+<script>
+// Zephyr station _ids (proxied through /api so hosted browsers are not blocked by CORS)
+const STATIONS = [
+  { id:"6631d5ddcf26372d5b80413b", name:"Passage Rock" },
+  { id:"68f65b7ce3323e552ce3b2a5", name:"Tāmaki Strait" },
+  { id:"69f7dd013fd033f10b5f8696", name:"Tiritiri Matangi" },
+  { id:"6631d5ddcf26372d5b8040a2", name:"Channel Island" },
+  { id:"6631d5ddcf26372d5b80414c", name:"Te Kouma Heads" },
+  { id:"6631d5ddcf26372d5b804176", name:"Manukau Head" },
+  { id:"68f65ba0e3323e552ce3b2dc", name:"Rangitoto Buoy" },
+  { id:"6631d5ddcf26372d5b8040c0", name:"Whangaparāoa" },
+];
+
+const API_BASE = "/api";
+const KMH_TO_KN = 1/1.852;
+const DIRS = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+const compass = deg => DIRS[Math.round(((deg%360)/22.5))%16];
+const bandKey  = kn => kn<11?"calm":kn<21?"mod":kn<31?"fresh":"gale";
+const bandLabel= kn => kn<11?"Light":kn<21?"Moderate":kn<31?"Fresh":kn<34?"Strong":"Gale";
+function ageText(iso){
+  if(!iso) return "";
+  const m=Math.round((Date.now()-new Date(iso).getTime())/60000);
+  if(m<1) return "now"; if(m<60) return m+"m"; return Math.floor(m/60)+"h";
+}
+
+const grid=document.getElementById("grid");
+const updatedEl=document.getElementById("updated");
+const liveEl=document.getElementById("live");
+
+const cards=STATIONS.map(s=>{
+  const el=document.createElement("section");
+  el.className="tile";
+  el.innerHTML=`
+    <div class="graph"></div>
+    <div class="thead"><span class="name">${s.name}</span><span class="age"></span></div>
+    <div class="mid"><div class="spd">–<span class="u">kn</span></div><div class="gst">G –</div></div>
+    <div class="foot"></div>`;
+  grid.appendChild(el);
+  return el;
+});
+
+async function fetchAll(){
+  const r=await fetch(`${API_BASE}/stations?_=${Date.now()}`);
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const byId={}; for(const st of await r.json()) byId[st._id]=st; return byId;
+}
+
+function renderStation(el, st){
+  if(!st){ el.removeAttribute("data-band"); el.querySelector(".age").textContent="";
+    el.querySelector(".mid").innerHTML='<span class="err">no data</span>';
+    el.querySelector(".foot").innerHTML=""; return; }
+  el.classList.toggle("offline", !!st.isOffline);
+  const avg = st.currentAverage!=null?Math.round(st.currentAverage*KMH_TO_KN):null;
+  const gust= st.currentGust!=null?Math.round(st.currentGust*KMH_TO_KN):null;
+  const hero= avg!=null?avg:gust;
+
+  if(hero!=null) el.dataset.band=bandKey(hero); else el.removeAttribute("data-band");
+
+  const ageEl=el.querySelector(".age");
+  const mins= st.lastUpdate?(Date.now()-new Date(st.lastUpdate).getTime())/60000:999;
+  ageEl.textContent= st.isOffline?"OFFLINE":ageText(st.lastUpdate);
+  ageEl.className="age"+(st.isOffline?" off":mins>40?" stale":"");
+
+  el.querySelector(".mid").innerHTML=
+    `<div class="spd">${hero??"–"}<span class="u">kn</span></div>`+
+    `<div class="gst">${gust!=null?`<em>G</em> ${gust}`:`<em>G</em> –`}</div>`;
+
+  const dir=st.currentBearing;
+  const arrow = dir!=null
+    ? `<svg viewBox="0 0 22 22"><path d="M11 2 L15 18 L11 14 L7 18 Z" fill="var(--c,currentColor)" transform="rotate(${(dir+180)%360} 11 11)"/></svg>`
+    : "";
+  const dirtxt = dir!=null
+    ? `<span class="card">${compass(dir)}</span><span class="deg">${Math.round(dir)}°</span>`
+    : `<span class="card">–</span>`;
+  el.querySelector(".foot").innerHTML=
+    `<div class="dirwrap">${arrow}${dirtxt}</div>`+
+    `<span class="bl">${hero!=null?bandLabel(hero):"—"}</span>`;
+}
+
+// ---- 2-hour history graphs (Strava-elevation style, behind each tile) ----
+const histById={};
+function twoHourPoints(list){
+  const cutoff=Date.now()-2*60*60*1000;
+  return list
+    .filter(d=>d.windAverage!=null && new Date(d.time).getTime()>=cutoff)
+    .map(d=>({t:new Date(d.time).getTime(), v:d.windAverage*KMH_TO_KN}))
+    .sort((a,b)=>a.t-b.t);
+}
+function smoothLine(P){
+  if(P.length<2) return "";
+  if(P.length===2) return `M ${P[0].x.toFixed(2)} ${P[0].y.toFixed(2)} L ${P[1].x.toFixed(2)} ${P[1].y.toFixed(2)}`;
+  let d=`M ${P[0].x.toFixed(2)} ${P[0].y.toFixed(2)}`;
+  for(let i=0;i<P.length-1;i++){
+    const p0=P[i-1]||P[i], p1=P[i], p2=P[i+1], p3=P[i+2]||p2;
+    const c1x=p1.x+(p2.x-p0.x)/6, c1y=p1.y+(p2.y-p0.y)/6;
+    const c2x=p2.x-(p3.x-p1.x)/6, c2y=p2.y-(p3.y-p1.y)/6;
+    d+=` C ${c1x.toFixed(2)} ${c1y.toFixed(2)} ${c2x.toFixed(2)} ${c2y.toFixed(2)} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+  }
+  return d;
+}
+function drawGraph(i, pts){
+  const g=cards[i].querySelector(".graph"); if(!g) return;
+  if(!pts || pts.length<2){ g.innerHTML=""; return; }
+  const tMin=pts[0].t, tMax=pts[pts.length-1].t, span=Math.max(tMax-tMin,1);
+  const maxV=Math.max(...pts.map(p=>p.v), 1);
+  const yMax=Math.max(maxV*1.2, 10);                 // auto-scale, with a calm floor
+  const P=pts.map(p=>({x:(p.t-tMin)/span*100, y:100-(p.v/yMax)*90}));
+  const line=smoothLine(P); if(!line){ g.innerHTML=""; return; }
+  const area=`${line} L ${P[P.length-1].x.toFixed(2)} 100 L ${P[0].x.toFixed(2)} 100 Z`;
+  g.innerHTML=
+    `<svg viewBox="0 0 100 100" preserveAspectRatio="none">`+
+      `<defs><linearGradient id="wg${i}" x1="0" y1="0" x2="0" y2="1">`+
+        `<stop offset="0%" stop-color="var(--c,var(--mod))" stop-opacity="0.34"/>`+
+        `<stop offset="100%" stop-color="var(--c,var(--mod))" stop-opacity="0.03"/>`+
+      `</linearGradient></defs>`+
+      `<path d="${area}" fill="url(#wg${i})"/>`+
+      `<path d="${line}" fill="none" stroke="var(--c,var(--mod))" stroke-opacity="0.6" `+
+        `stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>`+
+    `</svg>`;
+}
+async function fetchHistory(){
+  await Promise.allSettled(STATIONS.map(async (s,i)=>{
+    try{
+      const r=await fetch(`${API_BASE}/stations/${s.id}/data?_=${Date.now()}`);
+      if(!r.ok) return;
+      const pts=twoHourPoints(await r.json());
+      histById[s.id]=pts; drawGraph(i, pts);
+    }catch(e){}
+  }));
+}
+
+let loading=false, lastUpdated=null, lastOk=false;
+function updateClock(){
+  if(loading){ updatedEl.textContent="updating…"; return; }
+  if(lastUpdated===null) return;
+  if(!lastOk){ updatedEl.textContent="offline — retrying"; liveEl.classList.add("stale"); return; }
+  const s=Math.round((Date.now()-lastUpdated)/1000);
+  updatedEl.textContent="synced "+(s<5?"now":s<60?s+"s ago":Math.floor(s/60)+"m ago");
+  liveEl.classList.toggle("stale", s>120);
+}
+async function refreshAll(){
+  if(loading) return;
+  loading=true; updateClock();
+  try{
+    const byId=await fetchAll();
+    STATIONS.forEach((s,i)=>renderStation(cards[i], byId[s.id]));
+    lastOk=true; lastUpdated=Date.now();
+  }catch(e){ lastOk=false; if(lastUpdated===null) cards.forEach(c=>renderStation(c,null)); }
+  loading=false; updateClock();
+}
+
+// theme + kiosk controls
+const themeBtn=document.getElementById("theme");
+function setTheme(t){ document.body.dataset.theme=t; localStorage.setItem("wind-theme",t); themeBtn.textContent=t==="day"?"🌙":"☀"; }
+const hr=new Date().getHours();
+setTheme(localStorage.getItem("wind-theme") || ((hr>=6&&hr<19)?"day":"night"));
+themeBtn.onclick=()=> setTheme(document.body.dataset.theme==="day"?"night":"day");
+document.getElementById("fs").onclick=()=>{ document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen?.(); };
+document.getElementById("refresh").onclick=refreshAll;
+
+refreshAll();
+fetchHistory();
+setInterval(refreshAll, 60*1000);
+setInterval(fetchHistory, 5*60*1000);          // history changes slowly; redraw every 5 min
+setInterval(updateClock, 1000);
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden){ refreshAll(); fetchHistory(); } });
+</script>
+</body>
+</html>
