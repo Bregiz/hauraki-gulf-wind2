@@ -93,6 +93,9 @@ sorts ascending by `time`, and draws the background area graph. Buoys report few
 - `functions/api/stations/[id]/data.js` forwards `GET /api/stations/:id/data`, but only for
   the eight whitelisted station IDs. This prevents the deployment becoming a generic open
   proxy.
+- `netlify/functions/stations.mjs` and `netlify/functions/station-data.mjs` provide the same
+  proxy behavior for Netlify. `netlify.toml` rewrites `/api/...` to those functions, so
+  `index.html` does not need host-specific code.
 - `_routes.json` limits Pages Function invocation to `/api/*` so ordinary static asset
   requests do not consume function quota.
 - `_headers` locks the browser down with CSP (`connect-src 'self'`), framing protection,
@@ -218,7 +221,9 @@ copy its `_id`, add `{ id:"…", name:"…" }` to `STATIONS`, reload. Layout aut
 - **Verify quickly:** `/api/stations` should return a large JSON array, and the 8 tiles
   should populate within ~2 s. No console errors expected.
 - **Deploy:** Cloudflare Pages. Build command `exit 0`, build output directory `.`.
-  HTTPS is provided by Cloudflare.
+  HTTPS is provided by Cloudflare. If Cloudflare account verification blocks project creation,
+  use Netlify with build command `true`, publish directory `.`, and functions directory
+  `netlify/functions`.
 
 ---
 

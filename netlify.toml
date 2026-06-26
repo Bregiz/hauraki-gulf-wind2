@@ -1,0 +1,23 @@
+[build]
+  publish = "."
+  command = "true"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/stations"
+  to = "/.netlify/functions/stations"
+  status = 200
+
+[[redirects]]
+  from = "/api/stations/:id/data"
+  to = "/.netlify/functions/station-data?id=:id"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests"

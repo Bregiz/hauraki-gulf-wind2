@@ -18,9 +18,11 @@ browser CORS headers.
 |------|---------|
 | `index.html` | The browser app — HTML, CSS and JavaScript in one file. |
 | `functions/api/` | Same-origin Cloudflare Pages Function proxy for Zephyr JSON. |
+| `netlify/functions/` | Same-origin Netlify Functions proxy for Zephyr JSON. |
 | `_headers` | Security headers for the hosted site. |
 | `_routes.json` | Limits Function invocation to `/api/*` only. |
 | `wrangler.toml` | Cloudflare Pages local/deploy configuration. |
+| `netlify.toml` | Netlify redirects, function path and security headers. |
 | `README.md`  | This file — how to run and deploy. |
 | `AI-CONTEXT.md` | Full project context, design intent, decision history and the reverse-engineered data source — **hand this to an AI assistant** to continue the project. |
 
@@ -67,9 +69,21 @@ Why not static-only hosting?
 
 - **GitHub Pages** is free and reliable for static files, but it cannot run the `/api` proxy.
 - **Netlify** and **Vercel** can run functions, but this repository is already wired for
-  Cloudflare Pages Functions, whose free plan comfortably fits this dashboard.
+  Cloudflare Pages Functions, whose free plan comfortably fits this dashboard. Netlify support
+  is also included as a fallback if Cloudflare account verification blocks deployment.
 - **Netlify Drop** and other drag-and-drop static hosts are not enough unless you add their
   function equivalent.
+
+### Netlify fallback
+
+If Cloudflare blocks project creation, deploy the same GitHub repo on Netlify:
+
+1. Open <https://app.netlify.com/start>.
+2. Choose **Import from Git** and select `Bregiz/hauraki-gulf-wind2`.
+3. Build command: `true`
+4. Publish directory: `.`
+5. Functions directory: `netlify/functions` (Netlify normally reads this from `netlify.toml`).
+6. Deploy, then verify `/api/stations` returns JSON and the dashboard fills.
 
 ### Security posture
 
