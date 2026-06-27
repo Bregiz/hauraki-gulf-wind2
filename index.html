@@ -36,10 +36,15 @@
   header button{background:var(--tile-bg);color:var(--text);border:1px solid var(--line);
     border-radius:10px;padding:8px 12px;font-size:16px;line-height:1;cursor:pointer;transition:.15s}
   header button:hover{border-color:var(--mod);color:var(--mod)}
+  #stationMenuBtn[aria-expanded="true"]{border-color:var(--mod);color:var(--mod)}
 
   main{flex:1;min-height:0;display:grid;gap:clamp(8px,1.1vw,15px);
-    grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr}
-  @media(max-width:1000px){ main{grid-template-columns:repeat(2,minmax(0,1fr))} }
+    grid-template-columns:repeat(var(--cols,4),minmax(0,1fr));
+    grid-template-rows:repeat(var(--rows,2),minmax(0,1fr));grid-auto-rows:unset}
+  @media(max-width:1000px){
+    main{grid-template-columns:repeat(var(--p-cols,2),minmax(0,1fr));
+      grid-template-rows:repeat(var(--p-rows,4),minmax(0,1fr))}
+  }
 
   .tile{
     position:relative;overflow:hidden;border-radius:clamp(12px,1.2vw,18px);
@@ -85,6 +90,44 @@
   footer{flex:0 0 auto;color:var(--muted);font-size:clamp(9px,.92vw,12px);text-align:center;opacity:.85}
   footer a{color:inherit}
 
+  .panel[hidden]{display:none}
+  .panel{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.44);display:flex;align-items:center;justify-content:center;
+    padding:clamp(10px,2vw,24px)}
+  .sheet{width:min(960px,100%);max-height:min(760px,92dvh);background:var(--tile-bg);color:var(--text);
+    border:1px solid var(--line);border-radius:14px;display:grid;grid-template-rows:auto auto 1fr auto;
+    overflow:hidden;box-shadow:0 18px 60px rgba(0,0,0,.35)}
+  .sheet-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .sheet-head h2{font-size:18px;line-height:1;margin:0;letter-spacing:0;font-weight:800}
+  .count{color:var(--muted);font-size:13px;font-weight:700;white-space:nowrap}
+  .iconbtn{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--text);
+    display:grid;place-items:center;font-size:20px;line-height:1;cursor:pointer}
+  .iconbtn:hover{border-color:var(--mod);color:var(--mod)}
+  .sheet-tools{display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .search{width:100%;border:1px solid var(--line);border-radius:8px;background:color-mix(in srgb, var(--bg) 22%, var(--tile-bg));
+    color:var(--text);font:inherit;font-size:15px;padding:10px 12px;outline:none}
+  .search:focus{border-color:var(--mod)}
+  .reset{border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--text);font-weight:800;padding:0 12px;cursor:pointer}
+  .reset:hover{border-color:var(--mod);color:var(--mod)}
+  .picker{min-height:0;display:grid;grid-template-columns:minmax(190px,240px) 1fr}
+  .regions{min-height:0;overflow:auto;border-right:1px solid var(--line);padding:8px;display:flex;flex-direction:column;gap:4px}
+  .region{border:0;border-radius:8px;background:transparent;color:var(--text);text-align:left;padding:9px 10px;font-weight:750;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer}
+  .region:hover,.region.active{background:color-mix(in srgb, var(--mod) 14%, transparent)}
+  .region small{color:var(--muted);font-size:11px;font-weight:800}
+  .station-list{min-height:0;overflow:auto;padding:8px;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px;align-content:start}
+  .station-option{border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--text);padding:9px 10px;
+    display:grid;grid-template-columns:auto 1fr;gap:9px;align-items:start;cursor:pointer;min-width:0}
+  .station-option:hover{border-color:var(--mod)}
+  .station-option.selected{background:color-mix(in srgb, var(--mod) 13%, transparent);border-color:color-mix(in srgb, var(--mod) 70%, var(--line))}
+  .station-option.disabled{opacity:.45;cursor:not-allowed}
+  .station-option input{margin:2px 0 0;accent-color:var(--mod)}
+  .station-name{display:block;font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .station-meta{display:block;margin-top:3px;color:var(--muted);font-size:11px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .empty{color:var(--muted);padding:18px;font-weight:700}
+  .sheet-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-top:1px solid var(--line)}
+  .hint{color:var(--muted);font-size:12px;font-weight:700}
+  .done{border:1px solid var(--mod);border-radius:8px;background:var(--mod);color:#06111a;font-weight:900;padding:9px 14px;cursor:pointer}
+
   @media(max-width:700px) and (orientation:portrait){
     body{padding:6px;gap:6px;overflow:hidden}
     header{gap:6px;min-height:30px}
@@ -93,7 +136,8 @@
     .live .dot{width:7px;height:7px}
     .updated{font-size:9px}
     header button{width:30px;height:30px;padding:0;border-radius:8px;font-size:14px;display:grid;place-items:center}
-    main{gap:6px;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));grid-auto-rows:unset}
+    main{gap:6px;grid-template-columns:repeat(var(--p-cols,2),minmax(0,1fr));
+      grid-template-rows:repeat(var(--p-rows,4),minmax(0,1fr));grid-auto-rows:unset}
     .tile{border-radius:10px;padding:8px 9px 8px 12px;gap:3px}
     .tile::before{width:4px}
     .thead{gap:4px}
@@ -109,6 +153,16 @@
     .deg{font-size:9px}
     .bl{font-size:9px;letter-spacing:.3px;padding:3px 6px}
     footer{font-size:8px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .panel{padding:0;align-items:stretch;justify-content:stretch}
+    .sheet{width:100%;max-height:none;height:100dvh;border-radius:0;border:0}
+    .sheet-head{padding:12px}
+    .sheet-tools{grid-template-columns:1fr;gap:8px;padding:10px 12px}
+    .reset{height:36px}
+    .picker{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+    .regions{border-right:0;border-bottom:1px solid var(--line);display:flex;flex-direction:row;overflow-x:auto;padding:8px 10px}
+    .region{white-space:nowrap;flex:0 0 auto}
+    .station-list{grid-template-columns:1fr;padding:8px 10px}
+    .sheet-foot{padding:10px 12px}
   }
 
   @media(max-width:430px) and (orientation:portrait){
@@ -123,7 +177,8 @@
     .live .dot{width:7px;height:7px}
     .updated{font-size:9px}
     header button{width:28px;height:28px;padding:0;border-radius:8px;font-size:13px;display:grid;place-items:center}
-    main{gap:6px;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));grid-auto-rows:unset}
+    main{gap:6px;grid-template-columns:repeat(var(--l-cols,4),minmax(0,1fr));
+      grid-template-rows:repeat(var(--l-rows,2),minmax(0,1fr));grid-auto-rows:unset}
     .tile{border-radius:10px;padding:7px 8px 7px 11px;gap:3px}
     .tile::before{width:4px}
     .thead{gap:4px}
@@ -139,6 +194,18 @@
     .deg{font-size:9px}
     .bl{font-size:9px;letter-spacing:.3px;padding:3px 6px}
     footer{display:none}
+    .panel{padding:0}
+    .sheet{width:100%;height:100dvh;max-height:none;border-radius:0;border:0}
+    .sheet-head{padding:8px 12px}
+    .sheet-head h2{font-size:16px}
+    .sheet-tools{grid-template-columns:1fr auto;padding:8px 12px}
+    .search{padding:8px 10px;font-size:14px}
+    .picker{grid-template-columns:190px 1fr}
+    .regions{padding:6px}
+    .region{padding:7px 8px}
+    .station-list{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));padding:6px}
+    .station-option{padding:7px 8px}
+    .sheet-foot{padding:8px 12px}
   }
 </style>
 </head>
@@ -151,6 +218,7 @@
     <button id="theme" title="Day / night">☀</button>
     <button id="fs" title="Fullscreen">⛶</button>
     <button id="refresh" title="Refresh now">↻</button>
+    <button id="stationMenuBtn" title="Stations" aria-label="Open station menu" aria-controls="stationPanel" aria-expanded="false">☰</button>
   </header>
 
   <main id="grid"></main>
@@ -159,20 +227,45 @@
     Live anemometer data via <a href="https://www.zephyrapp.nz" target="_blank" rel="noopener">Zephyr</a> · winds in knots, arrow points downwind, label is the direction it's <b>from</b> · Tāmaki Strait Buoy stands in for Bastion Point
   </footer>
 
+  <div class="panel" id="stationPanel" hidden>
+    <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="stationPanelTitle">
+      <div class="sheet-head">
+        <h2 id="stationPanelTitle">Stations</h2>
+        <span class="count" id="stationCount">8 / 8</span>
+        <span class="spacer"></span>
+        <button class="iconbtn" id="closeStationPanel" title="Close" aria-label="Close station menu">×</button>
+      </div>
+      <div class="sheet-tools">
+        <input class="search" id="stationSearch" type="search" autocomplete="off" placeholder="Search NZ stations">
+        <button class="reset" id="resetStations" type="button">Reset Gulf</button>
+      </div>
+      <div class="picker">
+        <nav class="regions" id="stationRegions" aria-label="Station regions"></nav>
+        <div class="station-list" id="stationList"></div>
+      </div>
+      <div class="sheet-foot">
+        <span class="hint" id="stationHint">Choose up to 8 stations</span>
+        <button class="done" id="doneStations" type="button">Done</button>
+      </div>
+    </section>
+  </div>
+
 <script>
-// Zephyr station _ids (proxied through /api so hosted browsers are not blocked by CORS)
-const STATIONS = [
-  { id:"6631d5ddcf26372d5b80413b", name:"Passage Rock" },
-  { id:"68f65b7ce3323e552ce3b2a5", name:"Tāmaki Strait" },
-  { id:"69f7dd013fd033f10b5f8696", name:"Tiritiri Matangi" },
-  { id:"6631d5ddcf26372d5b8040a2", name:"Channel Island" },
-  { id:"6631d5ddcf26372d5b80414c", name:"Te Kouma Heads" },
-  { id:"6631d5ddcf26372d5b804176", name:"Manukau Head" },
-  { id:"68f65ba0e3323e552ce3b2dc", name:"Rangitoto Buoy" },
-  { id:"6631d5ddcf26372d5b8040c0", name:"Whangaparāoa" },
+// Default Zephyr station _ids (proxied through /api so hosted browsers are not blocked by CORS)
+const DEFAULT_STATIONS = [
+  { id:"6631d5ddcf26372d5b80413b", name:"Passage Rock", regionId:"auckland" },
+  { id:"68f65b7ce3323e552ce3b2a5", name:"Tāmaki Strait", regionId:"auckland" },
+  { id:"69f7dd013fd033f10b5f8696", name:"Tiritiri Matangi", regionId:"auckland" },
+  { id:"6631d5ddcf26372d5b8040a2", name:"Channel Island", regionId:"coromandel" },
+  { id:"6631d5ddcf26372d5b80414c", name:"Te Kouma Heads", regionId:"coromandel" },
+  { id:"6631d5ddcf26372d5b804176", name:"Manukau Head", regionId:"waikato" },
+  { id:"68f65ba0e3323e552ce3b2dc", name:"Rangitoto Buoy", regionId:"auckland" },
+  { id:"6631d5ddcf26372d5b8040c0", name:"Whangaparāoa", regionId:"auckland" },
 ];
 
 const API_BASE = "/api";
+const MAX_STATIONS = 8;
+const STATION_STORE = "hauraki-selected-stations-v2";
 const KMH_TO_KN = 1/1.852;
 const DIRS = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
 const compass = deg => DIRS[Math.round(((deg%360)/22.5))%16];
@@ -187,26 +280,169 @@ function ageText(iso){
 const grid=document.getElementById("grid");
 const updatedEl=document.getElementById("updated");
 const liveEl=document.getElementById("live");
+const menuBtn=document.getElementById("stationMenuBtn");
+const stationPanel=document.getElementById("stationPanel");
+const closePanelBtn=document.getElementById("closeStationPanel");
+const doneStationsBtn=document.getElementById("doneStations");
+const resetStationsBtn=document.getElementById("resetStations");
+const stationSearch=document.getElementById("stationSearch");
+const stationRegions=document.getElementById("stationRegions");
+const stationList=document.getElementById("stationList");
+const stationCount=document.getElementById("stationCount");
+const stationHint=document.getElementById("stationHint");
 
-const cards=STATIONS.map(s=>{
-  const el=document.createElement("section");
-  el.className="tile";
-  el.innerHTML=`
-    <div class="graph"></div>
-    <div class="thead"><span class="name">${s.name}</span><span class="age"></span></div>
-    <div class="mid"><div class="spd">–<span class="u">kn</span></div><div class="gst">G –</div></div>
-    <div class="foot"></div>`;
-  grid.appendChild(el);
-  return el;
-});
+const REGION_DEFS = [
+  { id:"selected", label:"Selected" },
+  { id:"northland", label:"Northland & Bay of Islands" },
+  { id:"auckland", label:"Auckland & Hauraki Gulf" },
+  { id:"coromandel", label:"Coromandel & Bay of Plenty" },
+  { id:"waikato", label:"Waikato & West Coast" },
+  { id:"taranaki", label:"Taranaki & Manawatū" },
+  { id:"wellington", label:"Wellington & Cook Strait" },
+  { id:"tasman", label:"Tasman & Marlborough Sounds" },
+  { id:"canterbury", label:"Canterbury & Kaikōura" },
+  { id:"south", label:"Otago, Southland & Fiordland" },
+  { id:"inland", label:"Lakes & Inland NZ" },
+  { id:"other", label:"Other NZ" },
+];
+const REGION_BY_ID = Object.fromEntries(REGION_DEFS.map(r=>[r.id,r]));
+const DEFAULT_BY_ID = Object.fromEntries(DEFAULT_STATIONS.map(s=>[
+  s.id,
+  { ...s, region:REGION_BY_ID[s.regionId]?.label || "Auckland & Hauraki Gulf", source:"Zephyr", search:"" }
+]));
+
+let selectedIds = loadSelectedIds();
+let stationCatalog = [];
+let stationById = { ...DEFAULT_BY_ID };
+let catalogLoaded = false;
+let activeRegion = "selected";
+let searchTerm = "";
+let cards = [];
+
+function escapeHTML(v){
+  return String(v).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+function searchKey(v){
+  return String(v || "").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+}
+function sourceLabel(type){
+  return ({metservice:"MetService",ac:"Buoy",holfuy:"Holfuy",tempest:"Tempest",windy:"Windy",windguru:"Windguru",cp:"Port",harvest:"Harvest"})[type] || "Zephyr";
+}
+function regionIdFor(lon, lat){
+  if(!Number.isFinite(lon) || !Number.isFinite(lat)) return "other";
+  if(lat>-35.55) return "northland";
+  if(lat>-37.35 && lon>=173.7 && lon<176.0) return "auckland";
+  if(lat>-38.85 && lon>=175.0 && lon<178.9) return "coromandel";
+  if(lat>-39.35 && lon<175.35) return "waikato";
+  if(lat>-40.85 && lon<176.35) return "taranaki";
+  if(lat>-41.9 && lon<176.8) return "wellington";
+  if(lat>-42.75 && lon>=171.0 && lon<174.8) return "tasman";
+  if(lat>-44.85 && lon>=170.0) return "canterbury";
+  if(lat<=-44.85 || (lat<-43.0 && lon<170.0)) return "south";
+  if(lon>=174.0 && lon<177.0 && lat<=-37.0 && lat>-40.2) return "inland";
+  return "other";
+}
+function normalizeStation(st){
+  const coords = st.location?.coordinates || [];
+  const lon = Number(coords[0]), lat = Number(coords[1]);
+  const id = st._id || st.id;
+  if(!id || !st.name || !Number.isFinite(lon) || !Number.isFinite(lat)) return null;
+  if(lat<-48 || lat>-33 || lon<165 || lon>180) return null;
+  const regionId = regionIdFor(lon, lat);
+  const region = REGION_BY_ID[regionId]?.label || "Other NZ";
+  const source = sourceLabel(st.type);
+  return {
+    id, name:st.name, regionId, region, source, type:st.type || "", lon, lat,
+    isOffline:!!st.isOffline, lastUpdate:st.lastUpdate || "",
+    search:searchKey(`${st.name} ${region} ${source} ${st.type || ""}`)
+  };
+}
+function loadSelectedIds(){
+  try{
+    const ids = JSON.parse(localStorage.getItem(STATION_STORE) || "[]");
+    if(Array.isArray(ids)){
+      const clean = [...new Set(ids.filter(id=>typeof id==="string"))].slice(0,MAX_STATIONS);
+      if(clean.length) return clean;
+    }
+  }catch(e){}
+  return DEFAULT_STATIONS.map(s=>s.id);
+}
+function saveSelectedIds(){
+  localStorage.setItem(STATION_STORE, JSON.stringify(selectedIds));
+}
+function updateCatalog(list){
+  const wasLoaded = catalogLoaded;
+  const catalog = list.map(normalizeStation).filter(Boolean)
+    .sort((a,b)=>a.region.localeCompare(b.region) || a.name.localeCompare(b.name));
+  stationCatalog = catalog;
+  stationById = { ...DEFAULT_BY_ID };
+  for(const st of catalog){
+    const preferred = DEFAULT_BY_ID[st.id];
+    stationById[st.id] = preferred ? { ...st, name:preferred.name } : st;
+  }
+  catalogLoaded = true;
+  if(!wasLoaded){
+    buildCards();
+    setTimeout(fetchHistory,0);
+  }
+  renderStationMenu();
+}
+function getSelectedStations(){
+  return selectedIds.map(id=>stationById[id] || DEFAULT_BY_ID[id] || { id, name:"Station", region:"Other NZ", regionId:"other", source:"Zephyr" });
+}
+function gridPlan(n, maxCols){
+  if(n<=1) return {cols:1, rows:1};
+  if(maxCols===2){
+    const cols = Math.min(2,n);
+    return {cols, rows:Math.ceil(n/cols)};
+  }
+  if(n<=2) return {cols:n, rows:1};
+  if(n<=4) return {cols:2, rows:Math.ceil(n/2)};
+  if(n<=6) return {cols:3, rows:2};
+  return {cols:4, rows:Math.ceil(n/4)};
+}
+function applyGridLayout(n){
+  const count = Math.max(1,n);
+  const desktop = gridPlan(count,4);
+  const portrait = gridPlan(count,2);
+  const landscape = gridPlan(count,4);
+  grid.style.setProperty("--cols", desktop.cols);
+  grid.style.setProperty("--rows", desktop.rows);
+  grid.style.setProperty("--p-cols", portrait.cols);
+  grid.style.setProperty("--p-rows", portrait.rows);
+  grid.style.setProperty("--l-cols", landscape.cols);
+  grid.style.setProperty("--l-rows", landscape.rows);
+  grid.dataset.count = String(n);
+}
+function buildCards(){
+  const stations = getSelectedStations();
+  grid.innerHTML = "";
+  applyGridLayout(stations.length);
+  cards = stations.map(s=>{
+    const el=document.createElement("section");
+    el.className="tile";
+    el.dataset.id=s.id;
+    el.innerHTML=`
+      <div class="graph"></div>
+      <div class="thead"><span class="name">${escapeHTML(s.name)}</span><span class="age"></span></div>
+      <div class="mid"><div class="spd">–<span class="u">kn</span></div><div class="gst">G –</div></div>
+      <div class="foot"></div>`;
+    grid.appendChild(el);
+    return el;
+  });
+  updateStationCount();
+}
 
 async function fetchAll(){
   const r=await fetch(`${API_BASE}/stations?_=${Date.now()}`);
   if(!r.ok) throw new Error("HTTP "+r.status);
-  const byId={}; for(const st of await r.json()) byId[st._id]=st; return byId;
+  const list = await r.json();
+  updateCatalog(list);
+  const byId={}; for(const st of list) byId[st._id]=st; return byId;
 }
 
 function renderStation(el, st){
+  if(!el) return;
   if(!st){ el.removeAttribute("data-band"); el.querySelector(".age").textContent="";
     el.querySelector(".mid").innerHTML='<span class="err">no data</span>';
     el.querySelector(".foot").innerHTML=""; return; }
@@ -260,7 +496,7 @@ function smoothLine(P){
   return d;
 }
 function drawGraph(i, pts){
-  const g=cards[i].querySelector(".graph"); if(!g) return;
+  const g=cards[i]?.querySelector(".graph"); if(!g) return;
   if(!pts || pts.length<2){ g.innerHTML=""; return; }
   const tMin=pts[0].t, tMax=pts[pts.length-1].t, span=Math.max(tMax-tMin,1);
   const maxV=Math.max(...pts.map(p=>p.v), 1);
@@ -280,7 +516,8 @@ function drawGraph(i, pts){
     `</svg>`;
 }
 async function fetchHistory(){
-  await Promise.allSettled(STATIONS.map(async (s,i)=>{
+  const stations = getSelectedStations();
+  await Promise.allSettled(stations.map(async (s,i)=>{
     try{
       const r=await fetch(`${API_BASE}/station-data?id=${encodeURIComponent(s.id)}&_=${Date.now()}`);
       if(!r.ok) return;
@@ -304,11 +541,138 @@ async function refreshAll(){
   loading=true; updateClock();
   try{
     const byId=await fetchAll();
-    STATIONS.forEach((s,i)=>renderStation(cards[i], byId[s.id]));
+    getSelectedStations().forEach((s,i)=>renderStation(cards[i], byId[s.id]));
     lastOk=true; lastUpdated=Date.now();
   }catch(e){ lastOk=false; if(lastUpdated===null) cards.forEach(c=>renderStation(c,null)); }
   loading=false; updateClock();
 }
+
+function updateStationCount(){
+  if(stationCount) stationCount.textContent = `${selectedIds.length} / ${MAX_STATIONS}`;
+}
+function setStationHint(text){
+  stationHint.textContent = text || "Choose up to 8 stations";
+}
+function regionCounts(){
+  const counts = Object.fromEntries(REGION_DEFS.map(r=>[r.id,0]));
+  counts.selected = selectedIds.length;
+  for(const st of stationCatalog) counts[st.regionId] = (counts[st.regionId] || 0) + 1;
+  return counts;
+}
+function currentStationList(){
+  const term = searchKey(searchTerm);
+  if(term) return stationCatalog.filter(st=>st.search.includes(term));
+  if(activeRegion==="selected") return getSelectedStations();
+  return stationCatalog.filter(st=>st.regionId===activeRegion);
+}
+function renderStationMenu(){
+  updateStationCount();
+  const counts = regionCounts();
+  if(!REGION_BY_ID[activeRegion] || (activeRegion!=="selected" && counts[activeRegion]===0)) activeRegion="selected";
+
+  stationRegions.innerHTML = "";
+  for(const region of REGION_DEFS){
+    const count = counts[region.id] || 0;
+    if(region.id!=="selected" && !count) continue;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "region" + (region.id===activeRegion ? " active" : "");
+    btn.dataset.region = region.id;
+    btn.innerHTML = `<span>${escapeHTML(region.label)}</span><small>${count}</small>`;
+    stationRegions.appendChild(btn);
+  }
+
+  stationList.innerHTML = "";
+  if(!catalogLoaded && !stationCatalog.length && activeRegion!=="selected"){
+    stationList.innerHTML = '<div class="empty">Loading stations…</div>';
+    return;
+  }
+  const list = currentStationList();
+  if(!list.length){
+    stationList.innerHTML = '<div class="empty">No stations found</div>';
+    return;
+  }
+  for(const st of list){
+    const selected = selectedIds.includes(st.id);
+    const disabled = !selected && selectedIds.length>=MAX_STATIONS;
+    const label = document.createElement("label");
+    label.className = "station-option" + (selected ? " selected" : "") + (disabled ? " disabled" : "");
+    label.innerHTML = `
+      <input type="checkbox" class="station-toggle" data-id="${escapeHTML(st.id)}" ${selected?"checked":""} ${disabled?"disabled":""}>
+      <span>
+        <span class="station-name">${escapeHTML(st.name)}</span>
+        <span class="station-meta">${escapeHTML(st.region || "Other NZ")} · ${escapeHTML(st.source || "Zephyr")}${st.isOffline?" · offline":""}</span>
+      </span>`;
+    stationList.appendChild(label);
+  }
+}
+function stationSelectionChanged(){
+  saveSelectedIds();
+  buildCards();
+  renderStationMenu();
+  refreshAll();
+  fetchHistory();
+}
+function toggleStation(id, wantsSelected){
+  const isSelected = selectedIds.includes(id);
+  if(wantsSelected && !isSelected){
+    if(selectedIds.length>=MAX_STATIONS){
+      setStationHint("Maximum 8 stations");
+      renderStationMenu();
+      return;
+    }
+    selectedIds = [...selectedIds, id];
+    setStationHint("Station added");
+    stationSelectionChanged();
+    return;
+  }
+  if(!wantsSelected && isSelected){
+    if(selectedIds.length<=1){
+      setStationHint("Keep at least one station");
+      renderStationMenu();
+      return;
+    }
+    selectedIds = selectedIds.filter(stationId=>stationId!==id);
+    setStationHint("Station removed");
+    stationSelectionChanged();
+  }
+}
+function openStationPanel(){
+  stationPanel.hidden = false;
+  menuBtn.setAttribute("aria-expanded","true");
+  setStationHint("Choose up to 8 stations");
+  renderStationMenu();
+  stationSearch.focus({preventScroll:true});
+}
+function closeStationPanel(){
+  stationPanel.hidden = true;
+  menuBtn.setAttribute("aria-expanded","false");
+  menuBtn.focus({preventScroll:true});
+}
+menuBtn.onclick = openStationPanel;
+closePanelBtn.onclick = closeStationPanel;
+doneStationsBtn.onclick = closeStationPanel;
+stationPanel.addEventListener("click", e=>{ if(e.target===stationPanel) closeStationPanel(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !stationPanel.hidden) closeStationPanel(); });
+stationSearch.addEventListener("input", e=>{ searchTerm=e.target.value; renderStationMenu(); });
+stationRegions.addEventListener("click", e=>{
+  const btn = e.target.closest(".region");
+  if(!btn) return;
+  activeRegion = btn.dataset.region;
+  searchTerm = "";
+  stationSearch.value = "";
+  renderStationMenu();
+});
+stationList.addEventListener("change", e=>{
+  const input = e.target.closest(".station-toggle");
+  if(!input) return;
+  toggleStation(input.dataset.id, input.checked);
+});
+resetStationsBtn.onclick = ()=>{
+  selectedIds = DEFAULT_STATIONS.map(s=>s.id);
+  setStationHint("Hauraki Gulf restored");
+  stationSelectionChanged();
+};
 
 // theme + kiosk controls
 const themeBtn=document.getElementById("theme");
@@ -319,6 +683,8 @@ themeBtn.onclick=()=> setTheme(document.body.dataset.theme==="day"?"night":"day"
 document.getElementById("fs").onclick=()=>{ document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen?.(); };
 document.getElementById("refresh").onclick=refreshAll;
 
+buildCards();
+renderStationMenu();
 refreshAll();
 fetchHistory();
 setInterval(refreshAll, 60*1000);

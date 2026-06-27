@@ -1,10 +1,10 @@
 # Hauraki Gulf Wind — at-a-glance wind dashboard
 
-A single-page web dashboard showing **live wind** (speed, gust, direction) at eight
-points around the Hauraki Gulf. It's designed to be read **at a glance, from a distance** —
-e.g. mounted on a screen at a yacht's helm — so it uses big numbers and colour-coded tiles,
-with a **2-hour wind-speed trend graph** behind each tile (Strava-elevation style) so you can
-see whether the wind is building or dropping.
+A single-page web dashboard showing **live wind** (speed, gust, direction) for up to eight
+selected New Zealand stations. It defaults to key Hauraki Gulf stations and is designed to
+be read **at a glance, from a phone or helm display** — big numbers, colour-coded tiles, and
+a **2-hour wind-speed trend graph** behind each tile (Strava-elevation style) so you can see
+whether the wind is building or dropping.
 
 The UI is a self-contained `index.html`, with a tiny Cloudflare Pages Function proxy under
 `functions/api/` so hosted browsers can retrieve Zephyr data even when Zephyr does not send
@@ -88,8 +88,9 @@ If Cloudflare blocks project creation, deploy the same GitHub repo on Netlify:
 ### Security posture
 
 - The browser fetches only same-origin URLs (`/api/stations` and `/api/station-data?id=...`).
-- The proxy only fetches hard-coded Zephyr endpoints and only allows the eight known station
-  IDs for history, so it is not an open proxy.
+- The proxy only fetches hard-coded Zephyr endpoints. History requests must use a valid
+  24-character Zephyr station ID, so the picker can load any NZ station without creating a
+  generic open proxy.
 - `_headers` sets a restrictive Content Security Policy: app code can connect only to `self`.
 - Data is public wind-station JSON; no secrets or API keys are stored in the browser or proxy.
 - Responses are cached briefly to reduce load and stay well within free-tier function limits.
@@ -107,12 +108,14 @@ If Cloudflare blocks project creation, deploy the same GitHub repo on Netlify:
   ```
 
   The Cloudflare Function forwards that request to `https://api.zephyrapp.nz/stations`,
-  returning ~480 stations, each with its current readings. The page filters that list down
-  to the eight stations it shows, matched by station `_id`.
+  returning ~480 stations, each with its current readings. The page filters that catalogue
+  to NZ stations, groups them into yacht-friendly regions, and displays the user's selected
+  station IDs.
 - The API reports wind in **km/h**; the page converts to **knots** (÷ 1.852).
 - For the **2-hour trend graph** behind each tile, the page also calls
-  `GET /api/station-data?id={id}` (per station, every 5 minutes). The proxy forwards this to
-  Zephyr's history endpoint; the page keeps only the last 2 h.
+  `GET /api/station-data?id={id}` (per selected station, every 5 minutes). The proxy forwards
+  this to Zephyr's history endpoint after validating the station ID; the page keeps only the
+  last 2 h.
 
 Useful fields on each station object:
 
@@ -127,9 +130,17 @@ Useful fields on each station object:
 
 ---
 
-## The stations shown
+## Station selection
 
-Edit these in the `STATIONS` array near the top of the `<script>` block in `index.html`.
+Use the `☰` button in the header to choose stations. The menu:
+
+- groups NZ stations into regions that make sense for coastal cruising,
+- allows a maximum of 8 selected stations,
+- stores the selection in `localStorage`,
+- expands the grid when fewer than 8 are selected.
+
+The default set is defined in the `DEFAULT_STATIONS` array near the top of the `<script>`
+block in `index.html`.
 
 | Tile name | Zephyr `_id` | Notes |
 |-----------|--------------|-------|
@@ -142,15 +153,15 @@ Edit these in the `STATIONS` array near the top of the `<script>` block in `inde
 | Rangitoto Buoy    | `68f65ba0e3323e552ce3b2dc` | Buoy → no gust. |
 | Whangaparāoa      | `6631d5ddcf26372d5b8040c0` | |
 
-### To change or add a station
+### To change the default stations in code
 1. Open <https://api.zephyrapp.nz/stations> in a browser (it's plain JSON — use a JSON
    viewer or your browser's search to find a station by `name`).
 2. Copy that station's `_id`.
-3. Add/edit an entry in the `STATIONS` array in `index.html`:
+3. Add/edit an entry in the `DEFAULT_STATIONS` array in `index.html`:
    ```js
-   { id:"PASTE_THE_ID_HERE", name:"Your label" },
+   { id:"PASTE_THE_ID_HERE", name:"Your label", regionId:"auckland" },
    ```
-4. Save and reload. The layout auto-flows however many stations you list.
+4. Save and reload. Users can still override the displayed stations from the menu.
 
 ---
 
@@ -170,8 +181,9 @@ Edit these in the `STATIONS` array near the top of the `<script>` block in `inde
 - **Trend graph:** the background chart shows the last **2 hours** and refreshes every 5 min.
   Adjust the window in `twoHourPoints()` and the cadence in `setInterval(fetchHistory, …)`;
   styling (line/fill opacity, colour) is in `drawGraph()`.
-- **Layout:** a CSS grid that fills the viewport — 4 columns on a wide monitor, 2 on a
-  tablet, 1 on a phone. Numbers scale with the screen via CSS `clamp()`.
+- **Layout:** a CSS grid that fills the viewport. Phone portrait uses up to 2 columns,
+  phone landscape uses up to 4 columns, and fewer than 8 selected stations expand to use the
+  available space.
 
 ---
 

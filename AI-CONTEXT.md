@@ -4,16 +4,16 @@
 > This document gives you the complete context, design intent, decision history, and the
 > reverse-engineered data source so you can continue work without re-discovering anything.
 > The companion `README.md` is the human-facing run/deploy guide; this file is the deeper
-> "why". Last updated: **2026-06-26**.
+> "why". Last updated: **2026-06-27**.
 
 ---
 
 ## 1. What this project is
 
-A single-page web dashboard that shows **live wind** (speed, gust, direction) at **eight
-points around the Hauraki Gulf, New Zealand**. The owner is a yachtie who normally reads
-this kind of data from the NZ **Coastguard app**; this is a self-built replacement they can
-mount on a screen.
+A single-page web dashboard that shows **live wind** (speed, gust, direction) for up to
+**eight selected New Zealand stations**. It defaults to key Hauraki Gulf stations. The owner
+is a yachtie who normally reads this kind of data from the NZ **Coastguard app**; this is a
+self-built replacement they can mount on a screen or use on a phone.
 
 **Primary use context (drives every design decision): a display glanced at from a distance,
 on a yacht — bright sun, motion, quick looks.** Optimise for legibility-at-a-distance and
@@ -28,7 +28,11 @@ the proxy should stay small and defensive.
 
 ## 2. Current state (what's done and working)
 
-- 8 station tiles, live data, auto-refresh every 60 s, with a "● LIVE / synced Xs ago" header.
+- Up to 8 station tiles, live data, auto-refresh every 60 s, with a "● LIVE / synced Xs ago"
+  header.
+- **Station picker menu** opened from the header `☰` button. It loads the Zephyr station
+  catalogue, filters to NZ coordinates, groups stations into yacht-friendly cruising regions,
+  enforces a maximum of 8 selected stations, and stores choices in `localStorage`.
 - **Heat-map tiles**: each tile is tinted by wind-strength band so the whole board reads at a
   glance — calm=green, moderate=blue, fresh=amber, strong/gale=red.
 - **2-hour trend graph behind every tile** (Strava-elevation style): a smooth, auto-scaled
@@ -39,8 +43,9 @@ the proxy should stay small and defensive.
 - **Day / Night themes** (CSS-variable swap), auto-picked by time of day, toggled with the
   ☀/🌙 button, remembered in `localStorage`.
 - **Fullscreen (⛶) button** for kiosk/mounted use; **↻** manual refresh.
-- **Responsive kiosk layout** filling the viewport: 4 columns (monitor) / 2 (tablet) /
-  1 (phone).
+- **Responsive phone-first layout** filling the viewport: phone portrait uses 2 x 4 for
+  eight stations, phone landscape uses 4 x 2, and fewer selected stations expand to use the
+  available space.
 - Browser app now calls same-origin `/api/...` endpoints, which Cloudflare Pages Functions
   proxy to Zephyr. This avoids CORS failures and lets the hosted app use a restrictive CSP.
 
@@ -90,8 +95,9 @@ sorts ascending by `time`, and draws the background area graph. Buoys report few
 ### Proxy files
 - `functions/api/stations.js` forwards `GET /api/stations` to Zephyr's station list and
   caches briefly.
-- `functions/api/station-data.js` forwards `GET /api/station-data?id=...`, but only for the
-  eight whitelisted station IDs. This prevents the deployment becoming a generic open proxy.
+- `functions/api/station-data.js` forwards `GET /api/station-data?id=...` after validating
+  that `id` is a 24-character Zephyr station ID. The upstream host/path are still hard-coded,
+  so this supports arbitrary picker selections without becoming a generic open proxy.
 - `functions/api/stations/[id]/data.js` is the older path-style history route and is retained
   for compatibility.
 - `netlify/functions/stations.mjs` and `netlify/functions/station-data.mjs` provide the same
@@ -120,9 +126,10 @@ sorts ascending by `time`, and draws the background area graph. Buoys report few
 
 ---
 
-## 4. The 8 stations on the board
+## 4. Default stations
 
-Defined in the `STATIONS` array at the top of the `<script>` in `index.html`.
+Defined in the `DEFAULT_STATIONS` array at the top of the `<script>` in `index.html`.
+The user can override the displayed station set from the in-app station picker.
 
 | Tile name | Zephyr `_id` | Notes |
 |-----------|--------------|-------|
@@ -140,8 +147,9 @@ Rock/Island, Te Kouma Harbour, Manukau Harbour. **Bastion Point is not in Zephyr
 so the owner chose **Tāmaki Strait Buoy** as the inner-Waitematā stand-in. Rangitoto Buoy and
 Whangaparāoa were added at the owner's request.
 
-To change/add stations: open `https://api.zephyrapp.nz/stations`, find the station by `name`,
-copy its `_id`, add `{ id:"…", name:"…" }` to `STATIONS`, reload. Layout auto-flows.
+To change default stations in code: open `https://api.zephyrapp.nz/stations`, find the
+station by `name`, copy its `_id`, add `{ id:"…", name:"…", regionId:"auckland" }` to
+`DEFAULT_STATIONS`, reload. Layout auto-flows. For ordinary use, prefer the menu.
 
 ---
 
@@ -153,14 +161,18 @@ copy its `_id`, add `{ id:"…", name:"…" }` to `STATIONS`, reload. Layout aut
 - Tiles tint themselves with `color-mix(in srgb, var(--c) 9%, var(--tile-bg))`, where `--c`
   is set per-tile by `[data-band="calm|mod|fresh|gale"]`. **Changing theme recolours
   everything automatically — no JS re-render needed.**
-- Responsive grid (`main`) fills the viewport; `clamp()` scales all type.
+- Responsive grid (`main`) fills the viewport; `clamp()` scales all type. Grid dimensions are
+  driven by CSS variables set from the selected station count.
 
 **`<script>`** (top → bottom)
-- `STATIONS` — the 8 `{id,name}` entries. **Edit here to change stations.**
+- `DEFAULT_STATIONS` — the default `{id,name,regionId}` entries.
 - `API_BASE` — currently `/api`; keep this same-origin for hosted deployments.
+- Station picker data: `REGION_DEFS`, `normalizeStation()`, `regionIdFor()`,
+  `renderStationMenu()`, `toggleStation()`, and `stationSelectionChanged()`. The picker uses
+  the `/api/stations` catalogue and persists selected IDs in `localStorage`.
 - Helpers: `KMH_TO_KN`, `DIRS`/`compass()`, `bandKey()` (knots→band), `bandLabel()`
   (knots→label), `ageText()` (relative obs age).
-- Build phase: one skeleton `<section class="tile">` per station appended to `#grid`.
+- Build phase: one skeleton `<section class="tile">` per selected station appended to `#grid`.
 - `fetchAll()` — `GET /api/stations`, returns a `{_id: station}` map.
 - `renderStation(el, st)` — converts km/h→kn, picks hero (avg, falling back to gust), sets
   `data-band`, the age label, the speed+gust block, and the direction arrow (rotated to

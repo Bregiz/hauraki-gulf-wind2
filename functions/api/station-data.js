@@ -1,19 +1,10 @@
-const ALLOWED_STATION_IDS = new Set([
-  "6631d5ddcf26372d5b80413b",
-  "68f65b7ce3323e552ce3b2a5",
-  "69f7dd013fd033f10b5f8696",
-  "6631d5ddcf26372d5b8040a2",
-  "6631d5ddcf26372d5b80414c",
-  "6631d5ddcf26372d5b804176",
-  "68f65ba0e3323e552ce3b2dc",
-  "6631d5ddcf26372d5b8040c0",
-]);
+const STATION_ID_RE = /^[a-f0-9]{24}$/i;
 
 export async function onRequestGet({ request }) {
   const id = new URL(request.url).searchParams.get("id") || "";
-  if (!ALLOWED_STATION_IDS.has(id)) {
-    return new Response("Unknown station", {
-      status: 404,
+  if (!STATION_ID_RE.test(id)) {
+    return new Response("Invalid station id", {
+      status: 400,
       headers: {
         "content-type": "text/plain; charset=utf-8",
         "x-content-type-options": "nosniff",
