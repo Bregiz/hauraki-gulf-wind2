@@ -254,14 +254,14 @@
 <script>
 // Default Zephyr station _ids (proxied through /api so hosted browsers are not blocked by CORS)
 const DEFAULT_STATIONS = [
-  { id:"6631d5ddcf26372d5b80413b", name:"Passage Rock", regionId:"auckland" },
-  { id:"68f65b7ce3323e552ce3b2a5", name:"Tāmaki Strait", regionId:"auckland" },
-  { id:"69f7dd013fd033f10b5f8696", name:"Tiritiri Matangi", regionId:"auckland" },
-  { id:"6631d5ddcf26372d5b8040a2", name:"Channel Island", regionId:"coromandel" },
-  { id:"6631d5ddcf26372d5b80414c", name:"Te Kouma Heads", regionId:"coromandel" },
-  { id:"6631d5ddcf26372d5b804176", name:"Manukau Head", regionId:"waikato" },
-  { id:"68f65ba0e3323e552ce3b2dc", name:"Rangitoto Buoy", regionId:"auckland" },
-  { id:"6631d5ddcf26372d5b8040c0", name:"Whangaparāoa", regionId:"auckland" },
+  { id:"6631d5ddcf26372d5b80413b", name:"Passage Rock", regionId:"auckland", lon:175.116978, lat:-36.846853 },
+  { id:"68f65b7ce3323e552ce3b2a5", name:"Tāmaki Strait", regionId:"auckland", lon:175.016, lat:-36.8495 },
+  { id:"69f7dd013fd033f10b5f8696", name:"Tiritiri Matangi", regionId:"auckland", lon:174.897602, lat:-36.605631 },
+  { id:"6631d5ddcf26372d5b8040a2", name:"Channel Island", regionId:"coromandel", lon:175.331264, lat:-36.421878 },
+  { id:"6631d5ddcf26372d5b80414c", name:"Te Kouma Heads", regionId:"coromandel", lon:175.427651, lat:-36.820377 },
+  { id:"6631d5ddcf26372d5b804176", name:"Manukau Head", regionId:"waikato", lon:174.539516, lat:-37.049885 },
+  { id:"68f65ba0e3323e552ce3b2dc", name:"Rangitoto Buoy", regionId:"auckland", lon:174.8035, lat:-36.7737 },
+  { id:"6631d5ddcf26372d5b8040c0", name:"Whangaparāoa", regionId:"auckland", lon:174.836445, lat:-36.602767 },
 ];
 
 const API_BASE = "/api";
@@ -319,6 +319,8 @@ let catalogLoaded = false;
 let activeRegion = "selected";
 let searchTerm = "";
 let cards = [];
+let displayLayoutKey = "";
+let resizeTimer = null;
 
 function escapeHTML(v){
   return String(v).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
@@ -402,6 +404,61 @@ function gridPlan(n, maxCols){
   if(n<=6) return {cols:3, rows:2};
   return {cols:4, rows:Math.ceil(n/4)};
 }
+function currentGridPlan(n){
+  const count = Math.max(1,n);
+  if(matchMedia("(max-height:560px) and (orientation:landscape)").matches) return gridPlan(count,4);
+  if(matchMedia("(max-width:1000px)").matches) return gridPlan(count,2);
+  return gridPlan(count,4);
+}
+function hasLocation(st){
+  return Number.isFinite(st.lon) && Number.isFinite(st.lat);
+}
+function stationOrderTie(a,b){
+  return a.st.name.localeCompare(b.st.name) || a.i-b.i;
+}
+function arrangeStationsForGrid(stations, cols){
+  if(stations.length<2) return stations;
+  const sorted = stations.map((st,i)=>({st,i})).sort((a,b)=>{
+    const hasA = hasLocation(a.st), hasB = hasLocation(b.st);
+    if(hasA && hasB) return b.st.lat-a.st.lat || a.st.lon-b.st.lon || stationOrderTie(a,b);
+    if(hasA!==hasB) return hasA ? -1 : 1;
+    return stationOrderTie(a,b);
+  });
+  const arranged = [];
+  for(let i=0;i<sorted.length;i+=cols){
+    arranged.push(...sorted.slice(i,i+cols).sort((a,b)=>{
+      const hasA = hasLocation(a.st), hasB = hasLocation(b.st);
+      if(hasA && hasB) return a.st.lon-b.st.lon || b.st.lat-a.st.lat || stationOrderTie(a,b);
+      if(hasA!==hasB) return hasA ? -1 : 1;
+      return stationOrderTie(a,b);
+    }));
+  }
+  return arranged.map(item=>item.st);
+}
+function getDisplayStations(){
+  const stations = getSelectedStations();
+  return arrangeStationsForGrid(stations, currentGridPlan(stations.length).cols);
+}
+function currentDisplayLayoutKey(){
+  const stations = getSelectedStations();
+  const plan = currentGridPlan(stations.length);
+  return `${plan.cols}x${plan.rows}:${arrangeStationsForGrid(stations, plan.cols).map(s=>s.id).join("|")}`;
+}
+function ensureDisplayLayout(){
+  const key = currentDisplayLayoutKey();
+  if(key===displayLayoutKey) return false;
+  buildCards();
+  return true;
+}
+function scheduleDisplayLayoutCheck(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(()=>{
+    if(ensureDisplayLayout()){
+      refreshAll();
+      fetchHistory();
+    }
+  }, 160);
+}
 function applyGridLayout(n){
   const count = Math.max(1,n);
   const desktop = gridPlan(count,4);
@@ -416,7 +473,7 @@ function applyGridLayout(n){
   grid.dataset.count = String(n);
 }
 function buildCards(){
-  const stations = getSelectedStations();
+  const stations = getDisplayStations();
   grid.innerHTML = "";
   applyGridLayout(stations.length);
   cards = stations.map(s=>{
@@ -432,6 +489,7 @@ function buildCards(){
     return el;
   });
   updateStationCount();
+  displayLayoutKey = currentDisplayLayoutKey();
 }
 
 async function fetchAll(){
@@ -517,7 +575,8 @@ function drawGraph(i, pts){
     `</svg>`;
 }
 async function fetchHistory(){
-  const stations = getSelectedStations();
+  ensureDisplayLayout();
+  const stations = getDisplayStations();
   await Promise.allSettled(stations.map(async (s,i)=>{
     try{
       const r=await fetch(`${API_BASE}/station-data?id=${encodeURIComponent(s.id)}&_=${Date.now()}`);
@@ -539,10 +598,11 @@ function updateClock(){
 }
 async function refreshAll(){
   if(loading) return;
+  ensureDisplayLayout();
   loading=true; updateClock();
   try{
     const byId=await fetchAll();
-    getSelectedStations().forEach((s,i)=>renderStation(cards[i], byId[s.id]));
+    getDisplayStations().forEach((s,i)=>renderStation(cards[i], byId[s.id]));
     lastOk=true; lastUpdated=Date.now();
   }catch(e){ lastOk=false; if(lastUpdated===null) cards.forEach(c=>renderStation(c,null)); }
   loading=false; updateClock();
@@ -563,7 +623,7 @@ function regionCounts(){
 function currentStationList(){
   const term = searchKey(searchTerm);
   if(term) return stationCatalog.filter(st=>st.search.includes(term));
-  if(activeRegion==="selected") return getSelectedStations();
+  if(activeRegion==="selected") return getDisplayStations();
   return stationCatalog.filter(st=>st.regionId===activeRegion);
 }
 function renderStationMenu(){
@@ -691,6 +751,8 @@ fetchHistory();
 setInterval(refreshAll, 60*1000);
 setInterval(fetchHistory, 5*60*1000);          // history changes slowly; redraw every 5 min
 setInterval(updateClock, 1000);
+addEventListener("resize", scheduleDisplayLayoutCheck);
+addEventListener("orientationchange", scheduleDisplayLayoutCheck);
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden){ refreshAll(); fetchHistory(); } });
 </script>
 </body>

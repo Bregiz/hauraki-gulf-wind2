@@ -45,7 +45,8 @@ the proxy should stay small and defensive.
 - **Fullscreen (⛶) button** for kiosk/mounted use; **↻** manual refresh.
 - **Responsive phone-first layout** filling the viewport: phone portrait uses 2 x 4 for
   eight stations, phone landscape uses 4 x 2, and fewer selected stations expand to use the
-  available space.
+  available space. The displayed tile order is derived from station coordinates for the
+  active grid shape: rows run north-to-south, and each row runs west-to-east.
 - Browser app now calls same-origin `/api/...` endpoints, which Cloudflare Pages Functions
   proxy to Zephyr. This avoids CORS failures and lets the hosted app use a restrictive CSP.
 
@@ -148,8 +149,9 @@ so the owner chose **Tāmaki Strait Buoy** as the inner-Waitematā stand-in. Ran
 Whangaparāoa were added at the owner's request.
 
 To change default stations in code: open `https://api.zephyrapp.nz/stations`, find the
-station by `name`, copy its `_id`, add `{ id:"…", name:"…", regionId:"auckland" }` to
-`DEFAULT_STATIONS`, reload. Layout auto-flows. For ordinary use, prefer the menu.
+station by `name`, copy its `_id` and `[lon, lat]`, add
+`{ id:"…", name:"…", regionId:"auckland", lon:174.8, lat:-36.8 }` to `DEFAULT_STATIONS`,
+reload. Layout auto-flows. For ordinary use, prefer the menu.
 
 ---
 
@@ -165,11 +167,14 @@ station by `name`, copy its `_id`, add `{ id:"…", name:"…", regionId:"auckla
   driven by CSS variables set from the selected station count.
 
 **`<script>`** (top → bottom)
-- `DEFAULT_STATIONS` — the default `{id,name,regionId}` entries.
+- `DEFAULT_STATIONS` — the default `{id,name,regionId,lon,lat}` entries.
 - `API_BASE` — currently `/api`; keep this same-origin for hosted deployments.
 - Station picker data: `REGION_DEFS`, `normalizeStation()`, `regionIdFor()`,
   `renderStationMenu()`, `toggleStation()`, and `stationSelectionChanged()`. The picker uses
   the `/api/stations` catalogue and persists selected IDs in `localStorage`.
+- Geographic display ordering: `currentGridPlan()`, `arrangeStationsForGrid()`,
+  `getDisplayStations()`, and `ensureDisplayLayout()` keep the dashboard's visual order
+  matched to the current portrait/landscape grid without changing the saved selected IDs.
 - Helpers: `KMH_TO_KN`, `DIRS`/`compass()`, `bandKey()` (knots→band), `bandLabel()`
   (knots→label), `ageText()` (relative obs age).
 - Build phase: one skeleton `<section class="tile">` per selected station appended to `#grid`.

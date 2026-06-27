@@ -137,7 +137,9 @@ Use the `☰` button in the header to choose stations. The menu:
 - groups NZ stations into regions that make sense for coastal cruising,
 - allows a maximum of 8 selected stations,
 - stores the selection in `localStorage`,
-- expands the grid when fewer than 8 are selected.
+- expands the grid when fewer than 8 are selected,
+- automatically lays out the selected stations geographically: north toward the top, south
+  toward the bottom, west toward the left and east toward the right.
 
 The default set is defined in the `DEFAULT_STATIONS` array near the top of the `<script>`
 block in `index.html`.
@@ -157,9 +159,11 @@ block in `index.html`.
 1. Open <https://api.zephyrapp.nz/stations> in a browser (it's plain JSON — use a JSON
    viewer or your browser's search to find a station by `name`).
 2. Copy that station's `_id`.
-3. Add/edit an entry in the `DEFAULT_STATIONS` array in `index.html`:
+3. Add/edit an entry in the `DEFAULT_STATIONS` array in `index.html`, including `[lon, lat]`
+   coordinates so the default layout is geographically correct before the live catalogue
+   finishes loading:
    ```js
-   { id:"PASTE_THE_ID_HERE", name:"Your label", regionId:"auckland" },
+   { id:"PASTE_THE_ID_HERE", name:"Your label", regionId:"auckland", lon:174.8, lat:-36.8 },
    ```
 4. Save and reload. Users can still override the displayed stations from the menu.
 
@@ -183,7 +187,8 @@ block in `index.html`.
   styling (line/fill opacity, colour) is in `drawGraph()`.
 - **Layout:** a CSS grid that fills the viewport. Phone portrait uses up to 2 columns,
   phone landscape uses up to 4 columns, and fewer than 8 selected stations expand to use the
-  available space.
+  available space. Tiles are automatically reordered for the active grid shape using station
+  coordinates.
 
 ---
 
